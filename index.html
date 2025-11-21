@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Chain Wallet Reputation Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .networks-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            cursor: pointer;
+            background: white;
+        }
+
+        .popular-chains {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .chain-quick-btn {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            background: white;
+            color: #333;
+        }
+
+        .chain-quick-btn:hover {
+            border-color: #667eea;
+            background: #f5f5ff;
+            transform: translateY(-2px);
+        }
+
+        .chain-quick-btn:active {
+            transform: translateY(0);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .chain-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px;
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .score-high { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+        .score-medium { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .score-low { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+
+        .score-label {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .info-item .icon {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        .error {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #fee;
+            border-left: 4px solid #f44;
+            border-radius: 4px;
+            color: #c33;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Multi-Chain Wallet Reputation Checker</h1>
+        <p class="subtitle">Analyze crypto wallet trustworthiness across 60+ blockchains</p>
+        <span class="networks-badge">✨ POWERED BY ETHERSCAN V2 API - 60+ NETWORKS</span>
+
+        <div class="input-group">
+            <label for="chainSelect">Select Blockchain</label>
+            <select id="chainSelect">
+                <optgroup label="🔥 Popular Networks">
+                    <option value="1" selected>Ethereum Mainnet</option>
+                    <option value="137">Polygon (Matic)</option>
+                    <option value="56">BSC (Binance Smart Chain)</option>
+                    <option value="42161">Arbitrum One</option>
+                    <option value="10">Optimism</option>
+                    <option value="8453">Base</option>
+                    <option value="43114">Avalanche C-Chain</option>
+                </optgroup>
+                <optgroup label="⚡ Layer 2 Networks">
+                    <option value="324">zkSync Era</option>
+                    <option value="59144">Linea</option>
+                    <option value="534352">Scroll</option>
+                    <option value="81457">Blast</option>
+                </optgroup>
+                <optgroup label="🌐 Other EVM Networks">
+                    <option value="250">Fantom Opera</option>
+                    <option value="25">Cronos</option>
+                    <option value="1284">Moonbeam</option>
+                    <option value="1285">Moonriver</option>
+                    <option value="42220">Celo</option>
+                    <option value="100">Gnosis (xDai)</option>
+                    <option value="1101">Polygon zkEVM</option>
+                </optgroup>
+                <optgroup label="🧪 Test Networks">
+                    <option value="11155111">Sepolia Testnet</option>
+                    <option value="5">Goerli Testnet</option>
+                    <option value="80001">Mumbai (Polygon Testnet)</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="popular-chains">
+            <button class="chain-quick-btn" onclick="quickSelectChain('1')">⟠ Ethereum</button>
+            <button class="chain-quick-btn" onclick="quickSelectChain('137')">⬡ Polygon</button>
+            <button class="chain-quick-btn" onclick="quickSelectChain('56')">◆ BSC</button>
+            <button class="chain-quick-btn" onclick="quickSelectChain('42161')">▲ Arbitrum</button>
+            <button class="chain-quick-btn" onclick="quickSelectChain('10')">🔴 Optimism</button>
+            <button class="chain-quick-btn" onclick="quickSelectChain('8453')">🔵 Base</button>
+        </div>
+
+        <div class="input-group" style="margin-top: 20px;">
+            <label for="walletAddress">Wallet Address</label>
+            <input 
+                type="text" 
+                id="walletAddress" 
+                placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+            >
+        </div>
+
+        <button id="checkButton" onclick="checkWallet()">Analyze Wallet</button>
+
+        <div class="loading" id="loading">
+            <p>⏳ Analyzing wallet across blockchain...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="chain-badge" id="chainBadge">ETHEREUM</div>
+            
+            <div class="score-circle" id="scoreCircle">
+                <div id="scoreValue">--</div>
+                <div class="score-label">TRUST SCORE</div>
+            </div>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Account Age</div>
+                    <div class="stat-value" id="accountAge">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Transactions</div>
+                    <div class="stat-value" id="txCount">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Balance</div>
+                    <div class="stat-value" id="balance">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Risk Level</div>
+                    <div class="stat-value" id="riskLevel">--</div>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <div class="info-item">
+                    <span class="icon">📊</span>
+                    <span id="activityInfo">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="icon">💰</span>
+                    <span id="transactionInfo">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="icon" id="verificationIcon">--</span>
+                    <span id="verificationInfo">--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    
+        const ETHERSCAN_API_KEY = 'MY1P7F2PDC1MFIUDFNWJRB8JFBE2YPG7IF';
+
+
+        const CHAIN_INFO = {
+            '1': { name: 'Ethereum', symbol: 'ETH' },
+            '137': { name: 'Polygon', symbol: 'MATIC' },
+            '56': { name: 'BSC', symbol: 'BNB' },
+            '42161': { name: 'Arbitrum', symbol: 'ETH' },
+            '10': { name: 'Optimism', symbol: 'ETH' },
+            '8453': { name: 'Base', symbol: 'ETH' },
+            '43114': { name: 'Avalanche', symbol: 'AVAX' },
+            '324': { name: 'zkSync Era', symbol: 'ETH' },
+            '59144': { name: 'Linea', symbol: 'ETH' },
+            '534352': { name: 'Scroll', symbol: 'ETH' },
+            '81457': { name: 'Blast', symbol: 'ETH' },
+            '250': { name: 'Fantom', symbol: 'FTM' },
+            '25': { name: 'Cronos', symbol: 'CRO' },
+            '1284': { name: 'Moonbeam', symbol: 'GLMR' },
+            '1285': { name: 'Moonriver', symbol: 'MOVR' },
+            '42220': { name: 'Celo', symbol: 'CELO' },
+            '100': { name: 'Gnosis', symbol: 'xDAI' },
+            '1101': { name: 'Polygon zkEVM', symbol: 'ETH' },
+            '11155111': { name: 'Sepolia', symbol: 'ETH' },
+            '5': { name: 'Goerli', symbol: 'ETH' },
+            '80001': { name: 'Mumbai', symbol: 'MATIC' }
+        };
+
+        function quickSelectChain(chainId) {
+            document.getElementById('chainSelect').value = chainId;
+        }
+
+        async function checkWallet() {
+            const address = document.getElementById('walletAddress').value.trim();
+            const chainId = document.getElementById('chainSelect').value;
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const error = document.getElementById('error');
+            const button = document.getElementById('checkButton');
+
+            loading.classList.remove('active');
+            results.classList.remove('active');
+            error.classList.remove('active');
+
+            if (!address || !address.startsWith('0x') || address.length !== 42) {
+                error.textContent = '❌ Please enter a valid wallet address (starts with 0x, 42 characters)';
+                error.classList.add('active');
+                return;
+            }
+
+            loading.classList.add('active');
+            button.disabled = true;
+
+            const chainInfo = CHAIN_INFO[chainId] || { name: 'Unknown', symbol: 'TOKEN' };
+
+            try {
+                // Etherscan V2 API format - works for all supported chains
+                const balanceUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=account&action=balance&address=${address}&tag=latest&apikey=${ETHERSCAN_API_KEY}`;
+                const txUrl = `https://api.etherscan.io/v2/api?chainid=${chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+
+                console.log(`Checking ${chainInfo.name} (Chain ID: ${chainId})...`);
+
+                const [balanceResponse, txResponse] = await Promise.all([
+                    fetch(balanceUrl),
+                    fetch(txUrl)
+                ]);
+
+                const balanceData = await balanceResponse.json();
+                const txData = await txResponse.json();
+
+                console.log('Balance response:', balanceData);
+                console.log('Transaction response:', txData);
+
+                if (balanceData.status !== '1') {
+                    throw new Error(balanceData.result || balanceData.message || 'Failed to fetch balance');
+                }
+
+                if (txData.status !== '1') {
+                    throw new Error(txData.result || txData.message || 'Failed to fetch transactions');
+                }
+
+                const balance = (parseInt(balanceData.result) / 1e18).toFixed(4);
+                const transactions = txData.result || [];
+                const txCount = transactions.length;
+                
+                const firstTx = transactions[0];
+                const accountAge = firstTx ? 
+                    Math.floor((Date.now() / 1000 - firstTx.timeStamp) / 86400) : 0;
+
+                // Calculate trust score
+                let score = 50;
+                
+                if (accountAge > 365) score += 20;
+                else if (accountAge > 180) score += 15;
+                else if (accountAge > 30) score += 10;
+                
+                if (txCount > 100) score += 15;
+                else if (txCount > 50) score += 10;
+                else if (txCount > 10) score += 5;
+                
+                if (parseFloat(balance) > 1) score += 10;
+                else if (parseFloat(balance) > 0.1) score += 5;
+                
+                score = Math.min(score, 100);
+
+                let riskLevel, riskColor;
+                if (score >= 70) {
+                    riskLevel = 'Low';
+                    riskColor = 'score-high';
+                } else if (score >= 40) {
+                    riskLevel = 'Medium';
+                    riskColor = 'score-medium';
+                } else {
+                    riskLevel = 'High';
+                    riskColor = 'score-low';
+                }
+
+                // Update UI
+                document.getElementById('chainBadge').textContent = chainInfo.name.toUpperCase();
+                document.getElementById('scoreValue').textContent = score;
+                document.getElementById('scoreCircle').className = `score-circle ${riskColor}`;
+                document.getElementById('accountAge').textContent = `${accountAge} days`;
+                document.getElementById('txCount').textContent = txCount.toLocaleString();
+                document.getElementById('balance').textContent = `${balance} ${chainInfo.symbol}`;
+                document.getElementById('riskLevel').textContent = riskLevel;
+
+                document.getElementById('activityInfo').textContent = 
+                    `Active for ${accountAge} days with ${txCount} transactions on ${chainInfo.name}`;
+                
+                document.getElementById('transactionInfo').textContent = 
+                    `Balance: ${balance} ${chainInfo.symbol}`;
+
+                const verificationIcon = document.getElementById('verificationIcon');
+                const verificationInfo = document.getElementById('verificationInfo');
+                
+                if (score >= 70) {
+                    verificationIcon.textContent = '✅';
+                    verificationInfo.textContent = 'Wallet appears trustworthy';
+                } else if (score >= 40) {
+                    verificationIcon.textContent = '⚠️';
+                    verificationInfo.textContent = 'Moderate risk - manual review recommended';
+                } else {
+                    verificationIcon.textContent = '🚨';
+                    verificationInfo.textContent = 'High risk - proceed with caution';
+                }
+
+                loading.classList.remove('active');
+                results.classList.add('active');
+
+            } catch (err) {
+                console.error('Error:', err);
+                error.textContent = `❌ Error checking ${chainInfo.name}: ${err.message}`;
+                error.classList.add('active');
+                loading.classList.remove('active');
+            } finally {
+                button.disabled = false;
+            }
+        }
+        
+    </script>
+</body>
+</html>
